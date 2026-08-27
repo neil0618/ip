@@ -10,7 +10,7 @@ public class Anson {
                 + " / ___ \\ | | | |\\__ \\| (_) || | | |\n"
                 + "/_/   \\_\\|_| |_||___/ \\___/ |_| |_|\n";
         String line = "___________________________________";
-        String[] tasks = new String[100];
+        Task[] tasks = new Task[100];
         int tasksCount = 0;
 
         System.out.println(banner);
@@ -27,22 +27,52 @@ public class Anson {
                 System.out.println(line);
                 break;
             }
-            else if(reply.equals("list")) {
-                if(tasksCount == 0) {
-                    System.out.println("Your list is empty!");
+            else if(reply.startsWith("mark ")) {
+                int taskNum = Integer.parseInt(reply.substring(5));
+
+                if(taskNum <= 0 || taskNum > tasksCount) {
+                    System.out.println("That task number does not exist!");
+                    System.out.println(line);
                 }
                 else {
+                    tasks[taskNum - 1].markAsDone();
+                    System.out.println("I have marked this task as done:");
+                    System.out.println("[" + tasks[taskNum - 1].getStatusIcon() + "] " + tasks[taskNum - 1].getDescription());
+                    System.out.println(line);
+                }
+            }
+            else if(reply.startsWith("unmark ")) {
+                int taskNum = Integer.parseInt(reply.substring(7));
+
+                if(taskNum <= 0 || taskNum > tasksCount) {
+                    System.out.println("That task number does not exist!");
+                    System.out.println(line);
+                }
+                else {
+                    tasks[taskNum - 1].markAsNotDone();
+                    System.out.println("I have marked this task as not done yet:");
+                    System.out.println("[" + tasks[taskNum - 1].getStatusIcon() + "] " + tasks[taskNum - 1].getDescription());
+                    System.out.println(line);
+                }
+            }
+            else if(reply.equals("list")) {
+                if(tasksCount == 0) {
+                    System.out.println("Your task list is empty!");
+                }
+                else {
+                    System.out.println("Here are the tasks in your list:");
+
                     for (int i = 0; i < tasksCount; i++) {
-                        System.out.println((i + 1) + ". " + tasks[i]);
+                        System.out.println((i + 1) + ".[" + tasks[i].getStatusIcon() + "] " + tasks[i].getDescription());
                     }
                 }
 
                 System.out.println(line);
             }
             else {
-                tasks[tasksCount] = reply;
+                tasks[tasksCount] = new Task(reply);
                 tasksCount++;
-                System.out.println("added: " + reply);
+                System.out.println("added: " + tasks[tasksCount - 1].getDescription());
                 System.out.println(line);
             }
         }
