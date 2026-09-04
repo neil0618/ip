@@ -44,8 +44,7 @@ public class Anson {
                 } else {
                     tasks[taskNum - 1].markAsDone();
                     System.out.println("I have marked this task as done:");
-                    System.out.println("[" + tasks[taskNum - 1].getStatusIcon() + "] "
-                            + tasks[taskNum - 1].getDescription());
+                    System.out.println(tasks[taskNum - 1]);
                     System.out.println(line);
                 }
             } else if (reply.startsWith("unmark ")) {
@@ -57,8 +56,7 @@ public class Anson {
                 } else {
                     tasks[taskNum - 1].markAsNotDone();
                     System.out.println("I have marked this task as not done yet:");
-                    System.out.println("[" + tasks[taskNum - 1].getStatusIcon() + "] "
-                            + tasks[taskNum - 1].getDescription());
+                    System.out.println(tasks[taskNum - 1]);
                     System.out.println(line);
                 }
             } else if (reply.equals("list")) {
@@ -68,16 +66,44 @@ public class Anson {
                     System.out.println("Here are the tasks in your list:");
 
                     for (int i = 0; i < tasksCount; i++) {
-                        System.out.println((i + 1) + ".[" + tasks[i].getStatusIcon() + "] "
-                                + tasks[i].getDescription());
+                        System.out.println((i + 1) + "." + tasks[i]);
                     }
                 }
 
                 System.out.println(line);
-            } else {
-                tasks[tasksCount] = new Task(reply);
+            } else if (reply.startsWith("todo ")) {
+                String description = reply.substring(5);
+
+                tasks[tasksCount] = new Todo(description);
+
                 tasksCount++;
-                System.out.println("added: " + tasks[tasksCount - 1].getDescription());
+                System.out.println("Got it! I've added this task:");
+                System.out.println("  " + tasks[tasksCount - 1]);
+                System.out.println("Number of tasks in the list: " + tasksCount);
+                System.out.println(line);
+            } else if (reply.startsWith("deadline ")) {
+                String[] parts = reply.substring(9).split(" /by ", 2);
+
+                tasks[tasksCount] = new Deadline(parts[0], parts[1]);
+
+                tasksCount++;
+                System.out.println("Got it! I've added this task:");
+                System.out.println("  " + tasks[tasksCount - 1]);
+                System.out.println("Number of tasks in the list: " + tasksCount);
+                System.out.println(line);
+            } else if (reply.startsWith("event ")) {
+                String[] fromSplit = reply.substring(6).split(" /from ", 2);
+                String[] toSplit = fromSplit[1].split(" /to ", 2);
+
+                tasks[tasksCount] = new Event(fromSplit[0], toSplit[0], toSplit[1]);
+
+                tasksCount++;
+                System.out.println("Got it! I've added this task:");
+                System.out.println("  " + tasks[tasksCount - 1]);
+                System.out.println("Number of tasks in the list: " + tasksCount);
+                System.out.println(line);
+            } else {
+                System.out.println("Please specify the task as todo, deadline, or event!");
                 System.out.println(line);
             }
         }
