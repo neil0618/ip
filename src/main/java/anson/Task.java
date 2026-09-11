@@ -1,3 +1,5 @@
+package anson;
+
 /**
  * Represents a task with a description and a completion status.
  */
@@ -42,6 +44,12 @@ public class Task {
         return (isDone ? "X" : " ");
     }
 
+    /**
+     * Returns the string representation of this task, showing its status
+     * icon and description.
+     *
+     * @return Formatted string in the form "[status] description".
+     */
     @Override
     public String toString() {
         return "[" + getStatusIcon() + "] " + description;
