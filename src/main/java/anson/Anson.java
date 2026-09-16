@@ -9,12 +9,6 @@ public class Anson {
     private static final int MAX_TASKS = 100;
     private static final String LINE = "___________________________________";
 
-    private static final String MARK_PREFIX = "mark ";
-    private static final String UNMARK_PREFIX = "unmark ";
-    private static final String TODO_PREFIX = "todo ";
-    private static final String DEADLINE_PREFIX = "deadline ";
-    private static final String EVENT_PREFIX = "event ";
-
     private static final String DEADLINE_BY_SEPARATOR = " /by ";
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
@@ -36,7 +30,7 @@ public class Anson {
             String reply = scan.nextLine();
             System.out.println(LINE);
 
-            if (reply.equals("bye")) {
+            if (reply.trim().equals("bye")) {
                 System.out.println("Bye, see you soon!");
                 System.out.println(LINE);
                 break;
@@ -64,7 +58,9 @@ public class Anson {
 
     /**
      * Dispatches a single line of user input to the matching command
-     * handler and prints the trailing separator line.
+     * handler and prints the trailing separator line. Any AnsonException
+     * raised while handling the command is caught here so the chatbot
+     * never crashes mid-session.
      *
      * @param reply Raw command line entered by the user.
      * @param tasks Current task array.
@@ -72,20 +68,40 @@ public class Anson {
      * @return Updated task count after the command has been handled.
      */
     private static int handleCommand(String reply, Task[] tasks, int tasksCount) {
-        if (reply.startsWith(MARK_PREFIX)) {
-            handleMark(tasks, tasksCount, reply);
-        } else if (reply.startsWith(UNMARK_PREFIX)) {
-            handleUnmark(tasks, tasksCount, reply);
-        } else if (reply.equals("list")) {
-            handleList(tasks, tasksCount);
-        } else if (reply.startsWith(TODO_PREFIX)) {
-            tasksCount = handleTodo(tasks, tasksCount, reply);
-        } else if (reply.startsWith(DEADLINE_PREFIX)) {
-            tasksCount = handleDeadline(tasks, tasksCount, reply);
-        } else if (reply.startsWith(EVENT_PREFIX)) {
-            tasksCount = handleEvent(tasks, tasksCount, reply);
-        } else {
-            System.out.println("Please specify the task as todo, deadline, or event!");
+        try {
+            String trimmed = reply.trim();
+            if (trimmed.isEmpty()) {
+                throw new AnsonException("Please enter a command.");
+            }
+
+            String[] split = trimmed.split(" ", 2);
+            String commandWord = split[0];
+            String arguments = split.length > 1 ? split[1].trim() : "";
+
+            switch (commandWord) {
+                case "mark":
+                    handleMark(tasks, tasksCount, arguments);
+                    break;
+                case "unmark":
+                    handleUnmark(tasks, tasksCount, arguments);
+                    break;
+                case "list":
+                    handleList(tasks, tasksCount);
+                    break;
+                case "todo":
+                    tasksCount = handleTodo(tasks, tasksCount, arguments);
+                    break;
+                case "deadline":
+                    tasksCount = handleDeadline(tasks, tasksCount, arguments);
+                    break;
+                case "event":
+                    tasksCount = handleEvent(tasks, tasksCount, arguments);
+                    break;
+                default:
+                    throw new AnsonException("I'm sorry, but I don't know what that means :(");
+            }
+        } catch (AnsonException e) {
+            System.out.println(e.getMessage());
         }
 
         System.out.println(LINE);
@@ -93,19 +109,15 @@ public class Anson {
     }
 
     /**
-     * Marks the task referenced in the given command as done.
+     * Marks the task referenced by the given argument as done.
      *
      * @param tasks Current task array.
      * @param tasksCount Current number of tasks stored.
-     * @param reply Raw command line, expected to start with "mark ".
+     * @param arguments Text after the "mark" command word.
+     * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleMark(Task[] tasks, int tasksCount, String reply) {
-        int taskNum = Integer.parseInt(reply.substring(MARK_PREFIX.length()));
-
-        if (taskNum <= 0 || taskNum > tasksCount) {
-            System.out.println("That task number does not exist!");
-            return;
-        }
+    private static void handleMark(Task[] tasks, int tasksCount, String arguments) throws AnsonException {
+        int taskNum = parseTaskNumber(arguments, tasksCount);
 
         tasks[taskNum - 1].markAsDone();
         System.out.println("I have marked this task as done:");
@@ -113,23 +125,51 @@ public class Anson {
     }
 
     /**
-     * Marks the task referenced in the given command as not done.
+     * Marks the task referenced by the given argument as not done.
      *
      * @param tasks Current task array.
      * @param tasksCount Current number of tasks stored.
-     * @param reply Raw command line, expected to start with "unmark ".
+     * @param arguments Text after the "unmark" command word.
+     * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleUnmark(Task[] tasks, int tasksCount, String reply) {
-        int taskNum = Integer.parseInt(reply.substring(UNMARK_PREFIX.length()));
-
-        if (taskNum <= 0 || taskNum > tasksCount) {
-            System.out.println("That task number does not exist!");
-            return;
-        }
+    private static void handleUnmark(Task[] tasks, int tasksCount, String arguments) throws AnsonException {
+        int taskNum = parseTaskNumber(arguments, tasksCount);
 
         tasks[taskNum - 1].markAsNotDone();
         System.out.println("I have marked this task as not done yet:");
         System.out.println(tasks[taskNum - 1]);
+    }
+
+    /**
+     * Parses and validates a task number given as an argument to
+     * "mark"/"unmark".
+     *
+     * @param arguments Raw text expected to be a single task number.
+     * @param tasksCount Current number of tasks stored.
+     * @return The validated, 1-based task number.
+     * @throws AnsonException If the argument is missing, non-numeric, or out of range.
+     */
+    private static int parseTaskNumber(String arguments, int tasksCount) throws AnsonException {
+        if (arguments.isEmpty()) {
+            throw new AnsonException("Please specify the task number, e.g., mark 2.");
+        }
+
+        int taskNum;
+        try {
+            taskNum = Integer.parseInt(arguments);
+        } catch (NumberFormatException e) {
+            throw new AnsonException("The task number must be a whole number, e.g., mark 2.");
+        }
+
+        if (tasksCount == 0) {
+            throw new AnsonException("Your task list is empty, so there is no task " + taskNum + ".");
+        }
+
+        if (taskNum <= 0 || taskNum > tasksCount) {
+            throw new AnsonException("The task number must be between 1 and " + tasksCount + " inclusive.");
+        }
+
+        return taskNum;
     }
 
     /**
@@ -151,43 +191,103 @@ public class Anson {
     }
 
     /**
-     * Parses a "todo" command and adds the resulting task.
+     * Parses a "todo" command's arguments and adds the resulting task.
      *
      * @param tasks Current task array.
      * @param tasksCount Current number of tasks stored.
-     * @param reply Raw command line, expected to start with "todo ".
+     * @param arguments Text after the "todo" command word.
      * @return Updated task count.
+     * @throws AnsonException If the description is empty or the list is full.
      */
-    private static int handleTodo(Task[] tasks, int tasksCount, String reply) {
-        String description = reply.substring(TODO_PREFIX.length());
-        return addTask(tasks, tasksCount, new Todo(description));
+    private static int handleTodo(Task[] tasks, int tasksCount, String arguments) throws AnsonException {
+        if (arguments.isEmpty()) {
+            throw new AnsonException("The description of a todo cannot be empty.");
+        }
+
+        return addTask(tasks, tasksCount, new Todo(arguments));
     }
 
     /**
-     * Parses a "deadline" command and adds the resulting task.
+     * Parses a "deadline" command's arguments and adds the resulting task.
      *
      * @param tasks Current task array.
      * @param tasksCount Current number of tasks stored.
-     * @param reply Raw command line, expected to start with "deadline ".
+     * @param arguments Text after the "deadline" command word.
      * @return Updated task count.
+     * @throws AnsonException If the description or "/by" date/time is missing/empty, or the list is full.
      */
-    private static int handleDeadline(Task[] tasks, int tasksCount, String reply) {
-        String[] parts = reply.substring(DEADLINE_PREFIX.length()).split(DEADLINE_BY_SEPARATOR, 2);
-        return addTask(tasks, tasksCount, new Deadline(parts[0], parts[1]));
+    private static int handleDeadline(Task[] tasks, int tasksCount, String arguments) throws AnsonException {
+        if (arguments.isEmpty()) {
+            throw new AnsonException("The description of a deadline cannot be empty.");
+        }
+
+        if (!arguments.contains(DEADLINE_BY_SEPARATOR)) {
+            throw new AnsonException(
+                    "Please include '/by' followed by a date/time, e.g., deadline return book /by Sunday.");
+        }
+
+        String[] parts = arguments.split(DEADLINE_BY_SEPARATOR, 2);
+        String description = parts[0].trim();
+        String by = parts[1].trim();
+
+        if (description.isEmpty()) {
+            throw new AnsonException("The description of a deadline cannot be empty.");
+        }
+
+        if (by.isEmpty()) {
+            throw new AnsonException("Please specify a date/time after '/by'.");
+        }
+
+        return addTask(tasks, tasksCount, new Deadline(description, by));
     }
 
     /**
-     * Parses an "event" command and adds the resulting task.
+     * Parses an "event" command's arguments and adds the resulting task.
      *
      * @param tasks Current task array.
      * @param tasksCount Current number of tasks stored.
-     * @param reply Raw command line, expected to start with "event ".
+     * @param arguments Text after the "event" command word.
      * @return Updated task count.
+     * @throws AnsonException If the description, "/from", or "/to" date/time is missing/empty, or the list is full.
      */
-    private static int handleEvent(Task[] tasks, int tasksCount, String reply) {
-        String[] fromSplit = reply.substring(EVENT_PREFIX.length()).split(EVENT_FROM_SEPARATOR, 2);
-        String[] toSplit = fromSplit[1].split(EVENT_TO_SEPARATOR, 2);
-        return addTask(tasks, tasksCount, new Event(fromSplit[0], toSplit[0], toSplit[1]));
+    private static int handleEvent(Task[] tasks, int tasksCount, String arguments) throws AnsonException {
+        if (arguments.isEmpty()) {
+            throw new AnsonException("The description of an event cannot be empty.");
+        }
+
+        if (!arguments.contains(EVENT_FROM_SEPARATOR)) {
+            throw new AnsonException(
+                    "Please include '/from' followed by a start date/time, "
+                            + "e.g., event meeting /from Mon 2pm /to 4pm.");
+        }
+
+        String[] fromSplit = arguments.split(EVENT_FROM_SEPARATOR, 2);
+        String description = fromSplit[0].trim();
+
+        if (description.isEmpty()) {
+            throw new AnsonException("The description of an event cannot be empty.");
+        }
+
+        String remainder = fromSplit[1];
+        if (!remainder.contains(EVENT_TO_SEPARATOR)) {
+            throw new AnsonException(
+                    "Please include '/to' followed by an end date/time, "
+                            + "e.g., event meeting /from Mon 2pm /to 4pm.");
+        }
+
+        String[] toSplit = remainder.split(EVENT_TO_SEPARATOR, 2);
+        String from = toSplit[0].trim();
+        String to = toSplit[1].trim();
+
+        if (from.isEmpty()) {
+            throw new AnsonException("Please specify a start date/time after '/from'.");
+        }
+
+        if (to.isEmpty()) {
+            throw new AnsonException("Please specify an end date/time after '/to'.");
+        }
+
+        return addTask(tasks, tasksCount, new Event(description, from, to));
     }
 
     /**
@@ -197,8 +297,13 @@ public class Anson {
      * @param tasksCount Current number of tasks stored.
      * @param newTask Task to add.
      * @return Updated task count.
+     * @throws AnsonException If the task list is already at capacity.
      */
-    private static int addTask(Task[] tasks, int tasksCount, Task newTask) {
+    private static int addTask(Task[] tasks, int tasksCount, Task newTask) throws AnsonException {
+        if (tasksCount >= MAX_TASKS) {
+            throw new AnsonException("Your task list is full! Maximum capacity is " + MAX_TASKS + " tasks.");
+        }
+
         tasks[tasksCount] = newTask;
         tasksCount++;
 
