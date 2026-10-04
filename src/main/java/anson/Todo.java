@@ -22,4 +22,14 @@ public class Todo extends Task {
     public String toString() {
         return "[T]" + super.toString();
     }
+
+    /**
+     * Returns the save-file line for this todo task.
+     *
+     * @return String in the form "T | isDone | description".
+     */
+    @Override
+    public String toFileString() {
+        return "T | " + super.toFileString();
+    }
 }

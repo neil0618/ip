@@ -54,4 +54,13 @@ public class Task {
     public String toString() {
         return "[" + getStatusIcon() + "] " + description;
     }
+
+    /**
+     * Returns the part of this task's save-file line shared by all task types.
+     *
+     * @return String in the form "isDone | description", where isDone is 1 or 0.
+     */
+    public String toFileString() {
+        return (isDone ? "1" : "0") + " | " + description;
+    }
 }
