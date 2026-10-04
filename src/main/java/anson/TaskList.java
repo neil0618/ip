@@ -70,4 +70,22 @@ public class TaskList {
     public boolean isEmpty() {
         return tasks.isEmpty();
     }
+
+    /**
+     * Returns the tasks whose descriptions contain the given keyword,
+     * ignoring case.
+     *
+     * @param keyword Text to search for in task descriptions.
+     * @return A new task list holding only the matching tasks.
+     */
+    public TaskList find(String keyword) {
+        String lowerKeyword = keyword.toLowerCase();
+        ArrayList<Task> matches = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.getDescription().toLowerCase().contains(lowerKeyword)) {
+                matches.add(task);
+            }
+        }
+        return new TaskList(matches);
+    }
 }
