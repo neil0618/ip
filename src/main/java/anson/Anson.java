@@ -22,7 +22,7 @@ public class Anson {
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
         Task[] tasks = new Task[MAX_TASKS];
-        int tasksCount = 0;
+        int tasksCount = Storage.load(tasks);
 
         printGreeting();
 
@@ -78,6 +78,12 @@ public class Anson {
             String commandWord = split[0];
             String arguments = split.length > 1 ? split[1].trim() : "";
 
+            if (arguments.contains("|")) {
+                throw new AnsonException("Sorry, the '|' character can't be used in a command!");
+            }
+
+            boolean isModified = true;
+
             switch (commandWord) {
                 case "mark":
                     handleMark(tasks, tasksCount, arguments);
@@ -87,6 +93,7 @@ public class Anson {
                     break;
                 case "list":
                     handleList(tasks, tasksCount);
+                    isModified = false;
                     break;
                 case "todo":
                     tasksCount = handleTodo(tasks, tasksCount, arguments);
@@ -99,6 +106,10 @@ public class Anson {
                     break;
                 default:
                     throw new AnsonException("I'm sorry, but I don't know what that means :(");
+            }
+
+            if (isModified) {
+                Storage.save(tasks, tasksCount);
             }
         } catch (AnsonException e) {
             System.out.println(e.getMessage());
