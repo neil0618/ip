@@ -164,4 +164,18 @@ public class Parser {
 
         return new Event(description, from, to);
     }
+
+    /**
+     * Parses the arguments of a "find" command.
+     *
+     * @param arguments Text after the "find" command word.
+     * @return The keyword to search for.
+     * @throws AnsonException If the keyword is empty.
+     */
+    public static String parseFindKeyword(String arguments) throws AnsonException {
+        if (arguments.isEmpty()) {
+            throw new AnsonException("Please specify a keyword to search for, e.g., find book.");
+        }
+        return arguments;
+    }
 }

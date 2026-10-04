@@ -77,6 +77,10 @@ public class Anson {
                 case "delete":
                     handleDelete(arguments);
                     break;
+                case "find":
+                    ui.showMatchingTasks(tasks.find(Parser.parseFindKeyword(arguments)));
+                    isModified = false;
+                    break;
                 case "list":
                     ui.showTaskList(tasks);
                     isModified = false;

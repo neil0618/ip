@@ -138,4 +138,21 @@ public class Ui {
             System.out.println((i + 1) + "." + tasks.get(i));
         }
     }
+
+    /**
+     * Prints the tasks that matched a search, numbered from 1.
+     *
+     * @param matches Tasks that matched the search keyword.
+     */
+    public void showMatchingTasks(TaskList matches) {
+        if (matches.isEmpty()) {
+            System.out.println("No matching tasks found.");
+            return;
+        }
+
+        System.out.println("Here are the matching tasks in your list:");
+        for (int i = 0; i < matches.size(); i++) {
+            System.out.println((i + 1) + "." + matches.get(i));
+        }
+    }
 }
