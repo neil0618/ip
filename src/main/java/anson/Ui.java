@@ -1,6 +1,5 @@
 package anson;
 
-import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
