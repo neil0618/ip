@@ -1,17 +1,16 @@
 package anson;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 /**
  * Entry point for the Anson task-tracking chatbot.
  */
 public class Anson {
-    private static final String LINE = "___________________________________";
-
     private static final String DEADLINE_BY_SEPARATOR = " /by ";
     private static final String EVENT_FROM_SEPARATOR = " /from ";
     private static final String EVENT_TO_SEPARATOR = " /to ";
+
+    private static final Ui ui = new Ui();
 
     /**
      * Runs the Anson chatbot, reading commands from standard input until
@@ -20,39 +19,21 @@ public class Anson {
      * @param args Command-line arguments (unused).
      */
     public static void main(String[] args) {
-        Scanner scan = new Scanner(System.in);
         ArrayList<Task> tasks = Storage.load();
 
-        printGreeting();
+        ui.showWelcome();
 
         while (true) {
-            String reply = scan.nextLine();
-            System.out.println(LINE);
+            String reply = ui.readCommand();
+            ui.showLine();
 
             if (reply.trim().equals("bye")) {
-                System.out.println("Bye, see you soon!");
-                System.out.println(LINE);
+                ui.showGoodbye();
                 break;
             }
 
             handleCommand(reply, tasks);
         }
-    }
-
-    /**
-     * Prints the chatbot's startup banner and greeting.
-     */
-    private static void printGreeting() {
-        String banner = "    _                              \n"
-                + "   / \\    _ __   ___   ___   _ __  \n"
-                + "  / _ \\  | '_ \\ / __| / _ \\ | '_ \\ \n"
-                + " / ___ \\ | | | |\\__ \\| (_) || | | |\n"
-                + "/_/   \\_\\|_| |_||___/ \\___/ |_| |_|\n";
-
-        System.out.println(banner);
-        System.out.println("Hey there, I am Anson!");
-        System.out.println("How can I help?");
-        System.out.println(LINE);
     }
 
     /**
@@ -92,7 +73,7 @@ public class Anson {
                     handleDelete(tasks, arguments);
                     break;
                 case "list":
-                    handleList(tasks);
+                    ui.showTaskList(tasks);
                     isModified = false;
                     break;
                 case "todo":
@@ -112,10 +93,10 @@ public class Anson {
                 Storage.save(tasks);
             }
         } catch (AnsonException e) {
-            System.out.println(e.getMessage());
+            ui.showError(e.getMessage());
         }
 
-        System.out.println(LINE);
+        ui.showLine();
     }
 
     /**
@@ -130,8 +111,7 @@ public class Anson {
 
         Task task = tasks.get(taskNum - 1);
         task.markAsDone();
-        System.out.println("I have marked this task as done:");
-        System.out.println(task);
+        ui.showTaskMarked(task);
     }
 
     /**
@@ -146,8 +126,7 @@ public class Anson {
 
         Task task = tasks.get(taskNum - 1);
         task.markAsNotDone();
-        System.out.println("I have marked this task as not done yet:");
-        System.out.println(task);
+        ui.showTaskUnmarked(task);
     }
 
     /**
@@ -161,9 +140,7 @@ public class Anson {
         int taskNum = parseTaskNumber(arguments, tasks.size());
 
         Task removed = tasks.remove(taskNum - 1);
-        System.out.println("Noted. I've removed this task:");
-        System.out.println("  " + removed);
-        System.out.println("Now you have " + tasks.size() + " tasks in the list.");
+        ui.showTaskDeleted(removed, tasks.size());
     }
 
     /**
@@ -196,23 +173,6 @@ public class Anson {
         }
 
         return taskNum;
-    }
-
-    /**
-     * Prints every task currently stored, in order.
-     *
-     * @param tasks Current list of tasks.
-     */
-    private static void handleList(ArrayList<Task> tasks) {
-        if (tasks.isEmpty()) {
-            System.out.println("Your task list is empty!");
-            return;
-        }
-
-        System.out.println("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            System.out.println((i + 1) + "." + tasks.get(i));
-        }
     }
 
     /**
@@ -317,9 +277,6 @@ public class Anson {
      */
     private static void addTask(ArrayList<Task> tasks, Task newTask) {
         tasks.add(newTask);
-
-        System.out.println("Got it! I've added this task:");
-        System.out.println("  " + newTask);
-        System.out.println("Number of tasks in the list: " + tasks.size());
+        ui.showTaskAdded(newTask, tasks.size());
     }
 }
