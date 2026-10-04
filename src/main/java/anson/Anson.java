@@ -4,27 +4,39 @@ package anson;
  * Entry point for the Anson task-tracking chatbot.
  */
 public class Anson {
-    private static final Ui ui = new Ui();
-    private static final Storage storage = new Storage("data/anson.txt");
+    private final Storage storage;
+    private final TaskList tasks;
+    private final Ui ui;
 
     /**
-     * Runs the Anson chatbot, reading commands from standard input until
-     * the user enters "bye".
+     * Creates an Anson chatbot that saves to and loads from the given file.
+     * If the file cannot be read, the chatbot starts with an empty task list.
      *
-     * @param args Command-line arguments (unused).
+     * @param filePath Path of the data file, relative to the working directory.
      */
-    public static void main(String[] args) {
-        ui.showWelcome();
+    public Anson(String filePath) {
+        ui = new Ui();
+        storage = new Storage(filePath);
 
-        TaskList tasks;
+        TaskList loaded;
         try {
-            tasks = new TaskList(storage.load());
-            if (storage.getSkippedLineCount() > 0) {
-                ui.showSkippedLines(storage.getSkippedLineCount());
-            }
+            loaded = new TaskList(storage.load());
         } catch (AnsonException e) {
             ui.showLoadingError();
-            tasks = new TaskList();
+            loaded = new TaskList();
+        }
+        tasks = loaded;
+    }
+
+    /**
+     * Runs the chatbot, reading commands from standard input until
+     * the user enters "bye".
+     */
+    public void run() {
+        ui.showWelcome();
+
+        if (storage.getSkippedLineCount() > 0) {
+            ui.showSkippedLines(storage.getSkippedLineCount());
         }
 
         while (true) {
@@ -36,7 +48,7 @@ public class Anson {
                 break;
             }
 
-            handleCommand(reply, tasks);
+            handleCommand(reply);
         }
     }
 
@@ -47,9 +59,8 @@ public class Anson {
      * never crashes mid-session.
      *
      * @param reply Raw command line entered by the user.
-     * @param tasks Current list of tasks.
      */
-    private static void handleCommand(String reply, TaskList tasks) {
+    private void handleCommand(String reply) {
         try {
             String commandWord = Parser.parseCommandWord(reply);
             String arguments = Parser.parseArguments(reply);
@@ -58,26 +69,26 @@ public class Anson {
 
             switch (commandWord) {
                 case "mark":
-                    handleMark(tasks, arguments);
+                    handleMark(arguments);
                     break;
                 case "unmark":
-                    handleUnmark(tasks, arguments);
+                    handleUnmark(arguments);
                     break;
                 case "delete":
-                    handleDelete(tasks, arguments);
+                    handleDelete(arguments);
                     break;
                 case "list":
                     ui.showTaskList(tasks);
                     isModified = false;
                     break;
                 case "todo":
-                    addTask(tasks, Parser.parseTodo(arguments));
+                    addTask(Parser.parseTodo(arguments));
                     break;
                 case "deadline":
-                    addTask(tasks, Parser.parseDeadline(arguments));
+                    addTask(Parser.parseDeadline(arguments));
                     break;
                 case "event":
-                    addTask(tasks, Parser.parseEvent(arguments));
+                    addTask(Parser.parseEvent(arguments));
                     break;
                 default:
                     throw new AnsonException("I'm sorry, but I don't know what that means :(");
@@ -96,11 +107,10 @@ public class Anson {
     /**
      * Marks the task referenced by the given argument as done.
      *
-     * @param tasks Current list of tasks.
      * @param arguments Text after the "mark" command word.
      * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleMark(TaskList tasks, String arguments) throws AnsonException {
+    private void handleMark(String arguments) throws AnsonException {
         int taskNum = Parser.parseTaskNumber(arguments, tasks.size());
 
         Task task = tasks.get(taskNum - 1);
@@ -111,11 +121,10 @@ public class Anson {
     /**
      * Marks the task referenced by the given argument as not done.
      *
-     * @param tasks Current list of tasks.
      * @param arguments Text after the "unmark" command word.
      * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleUnmark(TaskList tasks, String arguments) throws AnsonException {
+    private void handleUnmark(String arguments) throws AnsonException {
         int taskNum = Parser.parseTaskNumber(arguments, tasks.size());
 
         Task task = tasks.get(taskNum - 1);
@@ -126,11 +135,10 @@ public class Anson {
     /**
      * Deletes the task referenced by the given argument from the list.
      *
-     * @param tasks Current list of tasks.
      * @param arguments Text after the "delete" command word.
      * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleDelete(TaskList tasks, String arguments) throws AnsonException {
+    private void handleDelete(String arguments) throws AnsonException {
         int taskNum = Parser.parseTaskNumber(arguments, tasks.size());
 
         Task removed = tasks.remove(taskNum - 1);
@@ -140,11 +148,19 @@ public class Anson {
     /**
      * Adds a task to the list and shows the confirmation message.
      *
-     * @param tasks Current list of tasks.
      * @param newTask Task to add.
      */
-    private static void addTask(TaskList tasks, Task newTask) {
+    private void addTask(Task newTask) {
         tasks.add(newTask);
         ui.showTaskAdded(newTask, tasks.size());
+    }
+
+    /**
+     * Starts the Anson chatbot.
+     *
+     * @param args Command-line arguments (unused).
+     */
+    public static void main(String[] args) {
+        new Anson("data/anson.txt").run();
     }
 }
