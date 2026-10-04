@@ -128,7 +128,7 @@ public class Ui {
      *
      * @param tasks Tasks to display.
      */
-    public void showTaskList(ArrayList<Task> tasks) {
+    public void showTaskList(TaskList tasks) {
         if (tasks.isEmpty()) {
             System.out.println("Your task list is empty!");
             return;

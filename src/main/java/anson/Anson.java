@@ -1,7 +1,5 @@
 package anson;
 
-import java.util.ArrayList;
-
 /**
  * Entry point for the Anson task-tracking chatbot.
  */
@@ -22,15 +20,15 @@ public class Anson {
     public static void main(String[] args) {
         ui.showWelcome();
 
-        ArrayList<Task> tasks;
+        TaskList tasks;
         try {
-            tasks = storage.load();
+            tasks = new TaskList(storage.load());
             if (storage.getSkippedLineCount() > 0) {
                 ui.showSkippedLines(storage.getSkippedLineCount());
             }
         } catch (AnsonException e) {
             ui.showLoadingError();
-            tasks = new ArrayList<>();
+            tasks = new TaskList();
         }
 
         while (true) {
@@ -55,7 +53,7 @@ public class Anson {
      * @param reply Raw command line entered by the user.
      * @param tasks Current list of tasks.
      */
-    private static void handleCommand(String reply, ArrayList<Task> tasks) {
+    private static void handleCommand(String reply, TaskList tasks) {
         try {
             String trimmed = reply.trim();
             if (trimmed.isEmpty()) {
@@ -116,7 +114,7 @@ public class Anson {
      * @param arguments Text after the "mark" command word.
      * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleMark(ArrayList<Task> tasks, String arguments) throws AnsonException {
+    private static void handleMark(TaskList tasks, String arguments) throws AnsonException {
         int taskNum = parseTaskNumber(arguments, tasks.size());
 
         Task task = tasks.get(taskNum - 1);
@@ -131,7 +129,7 @@ public class Anson {
      * @param arguments Text after the "unmark" command word.
      * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleUnmark(ArrayList<Task> tasks, String arguments) throws AnsonException {
+    private static void handleUnmark(TaskList tasks, String arguments) throws AnsonException {
         int taskNum = parseTaskNumber(arguments, tasks.size());
 
         Task task = tasks.get(taskNum - 1);
@@ -146,7 +144,7 @@ public class Anson {
      * @param arguments Text after the "delete" command word.
      * @throws AnsonException If the argument is missing, non-numeric, or out of range.
      */
-    private static void handleDelete(ArrayList<Task> tasks, String arguments) throws AnsonException {
+    private static void handleDelete(TaskList tasks, String arguments) throws AnsonException {
         int taskNum = parseTaskNumber(arguments, tasks.size());
 
         Task removed = tasks.remove(taskNum - 1);
@@ -192,7 +190,7 @@ public class Anson {
      * @param arguments Text after the "todo" command word.
      * @throws AnsonException If the description is empty.
      */
-    private static void handleTodo(ArrayList<Task> tasks, String arguments) throws AnsonException {
+    private static void handleTodo(TaskList tasks, String arguments) throws AnsonException {
         if (arguments.isEmpty()) {
             throw new AnsonException("The description of a todo cannot be empty.");
         }
@@ -207,7 +205,7 @@ public class Anson {
      * @param arguments Text after the "deadline" command word.
      * @throws AnsonException If the description or "/by" date/time is missing/empty.
      */
-    private static void handleDeadline(ArrayList<Task> tasks, String arguments) throws AnsonException {
+    private static void handleDeadline(TaskList tasks, String arguments) throws AnsonException {
         if (arguments.isEmpty()) {
             throw new AnsonException("The description of a deadline cannot be empty.");
         }
@@ -239,7 +237,7 @@ public class Anson {
      * @param arguments Text after the "event" command word.
      * @throws AnsonException If the description, "/from", or "/to" date/time is missing/empty.
      */
-    private static void handleEvent(ArrayList<Task> tasks, String arguments) throws AnsonException {
+    private static void handleEvent(TaskList tasks, String arguments) throws AnsonException {
         if (arguments.isEmpty()) {
             throw new AnsonException("The description of an event cannot be empty.");
         }
@@ -285,7 +283,7 @@ public class Anson {
      * @param tasks Current list of tasks.
      * @param newTask Task to add.
      */
-    private static void addTask(ArrayList<Task> tasks, Task newTask) {
+    private static void addTask(TaskList tasks, Task newTask) {
         tasks.add(newTask);
         ui.showTaskAdded(newTask, tasks.size());
     }
