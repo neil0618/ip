@@ -8,35 +8,56 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Handles saving tasks to, and loading tasks from, the hard disk.
+ * Deals with loading tasks from the data file and saving tasks to it.
  */
 public class Storage {
-    // Paths.get with separate segments keeps the path OS-independent.
-    private static final Path DATA_FILE = Paths.get("data", "anson.txt");
     private static final String SPLIT_REGEX = " \\| ";
+
+    private final Path filePath;
+    private int skippedLineCount = 0;
+
+    /**
+     * Creates a storage that reads from and writes to the given file.
+     * A relative path with forward slashes (e.g., "data/anson.txt") also
+     * works on Windows, so the path stays OS-independent.
+     *
+     * @param filePath Path of the data file, relative to the working directory.
+     */
+    public Storage(String filePath) {
+        this.filePath = Paths.get(filePath);
+    }
+
+    /**
+     * Returns how many lines were skipped as unreadable during the last load.
+     *
+     * @return Number of skipped lines.
+     */
+    public int getSkippedLineCount() {
+        return skippedLineCount;
+    }
 
     /**
      * Loads tasks from the data file. A missing file is treated as an empty
-     * task list. Lines that are not in the expected format are skipped and
-     * a warning is printed.
+     * task list. Lines in an unexpected format are skipped and counted.
      *
      * @return The loaded tasks.
+     * @throws AnsonException If the file exists but cannot be read.
      */
-    public static ArrayList<Task> load() {
+    public ArrayList<Task> load() throws AnsonException {
         ArrayList<Task> tasks = new ArrayList<>();
-        if (!Files.exists(DATA_FILE)) {
+        skippedLineCount = 0;
+
+        if (!Files.exists(filePath)) {
             return tasks;
         }
 
         List<String> lines;
         try {
-            lines = Files.readAllLines(DATA_FILE);
+            lines = Files.readAllLines(filePath);
         } catch (IOException e) {
-            System.out.println("I couldn't read your saved tasks, so I'm starting with an empty list.");
-            return tasks;
+            throw new AnsonException("I couldn't read your saved tasks: " + e.getMessage());
         }
 
-        int skipped = 0;
         for (String line : lines) {
             if (line.trim().isEmpty()) {
                 continue;
@@ -44,13 +65,8 @@ public class Storage {
             try {
                 tasks.add(parseTask(line));
             } catch (AnsonException e) {
-                skipped++;
+                skippedLineCount++;
             }
-        }
-
-        if (skipped > 0) {
-            System.out.println("Warning: skipped " + skipped + " unreadable line(s) in " + DATA_FILE
-                    + ". They will be dropped the next time your tasks are saved.");
         }
         return tasks;
     }
@@ -62,18 +78,18 @@ public class Storage {
      * @param tasks Current task list.
      * @throws AnsonException If the file cannot be written.
      */
-    public static void save(ArrayList<Task> tasks) throws AnsonException {
+    public void save(ArrayList<Task> tasks) throws AnsonException {
         List<String> lines = new ArrayList<>();
         for (Task task : tasks) {
             lines.add(task.toFileString());
         }
 
         try {
-            Path parent = DATA_FILE.getParent();
+            Path parent = filePath.getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            Files.write(DATA_FILE, lines);
+            Files.write(filePath, lines);
         } catch (IOException e) {
             throw new AnsonException("I couldn't save your tasks: " + e.getMessage());
         }
@@ -86,7 +102,7 @@ public class Storage {
      * @return The corresponding task.
      * @throws AnsonException If the line is not in the expected format.
      */
-    private static Task parseTask(String line) throws AnsonException {
+    private Task parseTask(String line) throws AnsonException {
         String[] parts = line.split(SPLIT_REGEX, -1);
         if (parts.length < 3) {
             throw new AnsonException("Malformed line: " + line);

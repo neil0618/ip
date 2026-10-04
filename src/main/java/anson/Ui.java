@@ -61,6 +61,25 @@ public class Ui {
     }
 
     /**
+     * Prints a message saying the save file could not be read.
+     */
+    public void showLoadingError() {
+        System.out.println("I couldn't read your saved tasks, so I'm starting with an empty list.");
+        showLine();
+    }
+
+    /**
+     * Prints a warning that some lines of the save file were unreadable.
+     *
+     * @param skippedCount Number of lines that were skipped.
+     */
+    public void showSkippedLines(int skippedCount) {
+        System.out.println("Warning: skipped " + skippedCount + " unreadable line(s) in your save file. "
+                + "They will be dropped the next time your tasks are saved.");
+        showLine();
+    }
+
+    /**
      * Prints the confirmation shown after a task is added.
      *
      * @param task The task that was added.

@@ -11,6 +11,7 @@ public class Anson {
     private static final String EVENT_TO_SEPARATOR = " /to ";
 
     private static final Ui ui = new Ui();
+    private static final Storage storage = new Storage("data/anson.txt");
 
     /**
      * Runs the Anson chatbot, reading commands from standard input until
@@ -19,9 +20,18 @@ public class Anson {
      * @param args Command-line arguments (unused).
      */
     public static void main(String[] args) {
-        ArrayList<Task> tasks = Storage.load();
-
         ui.showWelcome();
+
+        ArrayList<Task> tasks;
+        try {
+            tasks = storage.load();
+            if (storage.getSkippedLineCount() > 0) {
+                ui.showSkippedLines(storage.getSkippedLineCount());
+            }
+        } catch (AnsonException e) {
+            ui.showLoadingError();
+            tasks = new ArrayList<>();
+        }
 
         while (true) {
             String reply = ui.readCommand();
@@ -90,7 +100,7 @@ public class Anson {
             }
 
             if (isModified) {
-                Storage.save(tasks);
+                storage.save(tasks);
             }
         } catch (AnsonException e) {
             ui.showError(e.getMessage());
