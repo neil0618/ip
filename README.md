@@ -176,7 +176,7 @@ Anson saves your tasks automatically after every change. There is nothing you ne
 
 A: Copy the `data/anson.txt` file into a `data` folder next to `Anson.jar` on the other computer.
 
-**Q: Why does Anson say "Sorry, the '|' character can't be used in a command!"?**
+**Q: Why does Anson say "Sorry, the `|` character can't be used in a command!"?**
 
 A: Anson uses `|` internally to separate fields in the save file, so it cannot be part of a task. Use another character instead.
 
